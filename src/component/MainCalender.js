@@ -1,16 +1,18 @@
-import './mainCalender.css'
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
-import interactionPlugin from "@fullcalendar/interaction"; // 사용자 상호작용 플러그인
-import axios from "axios"; // REST API 호출을 위해 axios 사용
+import interactionPlugin from "@fullcalendar/interaction";
+import axios from "axios";
 
 export default function MainCalendar(props) {
     const [events, setEvents] = useState([]);
-    const [selectedEvent, setSelectedEvent] = useState(null); // 선택된 이벤트 정보
-    const [isPopupOpen, setIsPopupOpen] = useState(false); // 팝업 상태
+    const [selectedEvent, setSelectedEvent] = useState(null);
+    const [isPopupOpen, setIsPopupOpen] = useState(false);
     const user_id = props.user_id;
+
+    // 요청 취소 토큰 관리
+    const cancelTokenSource = useRef(null);
 
     // 날짜 포맷팅 유틸리티 함수
     const formatDate = (date) => {
@@ -19,13 +21,18 @@ export default function MainCalendar(props) {
     };
 
     // 서버에서 이벤트 가져오기
-    const fetchEvents = useCallback(async (date) => {
-        const { start } = getMonthRange(date); // `end`를 여기에 활용 가능
+    const fetchEvents = useCallback(async (startDate, endDate) => {
+        if (cancelTokenSource.current) {
+            cancelTokenSource.current.cancel("Previous request canceled");
+        }
+        cancelTokenSource.current = axios.CancelToken.source();
+
         try {
-            const formattedStart = formatDate(new Date(start));
+            const formattedStart = formatDate(new Date(startDate));
             const response = await axios.post(
                 "https://heimsunback-production.up.railway.app/farm/month",
-                { user_id, month: formattedStart }
+                { user_id, month: formattedStart },
+                { cancelToken: cancelTokenSource.current.token }
             );
             if (response.data) {
                 const fetchedEvents = response.data.map((event) => ({
@@ -34,28 +41,42 @@ export default function MainCalendar(props) {
                     start: event.start,
                     end: event.end,
                     description: event.description || "",
-                    upload: event.upload
+                    upload: event.upload,
                 }));
                 setEvents(fetchedEvents);
             }
         } catch (err) {
-            console.error("Failed to fetch events:", err);
+            if (axios.isCancel(err)) {
+                console.log("Request canceled:", err.message);
+            } else {
+                console.error("Failed to fetch events:", err);
+            }
         }
     }, [user_id]);
 
+    // 날짜 범위 계산
     const getMonthRange = (date) => {
         const start = new Date(date.getFullYear(), date.getMonth(), 1);
         const end = new Date(date.getFullYear(), date.getMonth() + 1, 0);
         return { start, end };
     };
 
-    useEffect(() => {
-        fetchEvents(new Date());
-    }, [fetchEvents]);
-
+    // 달이 변경될 때 호출
     const handleDatesSet = (dateInfo) => {
-        fetchEvents(dateInfo.start);
+        const { start, end } = getMonthRange(dateInfo.start);
+        fetchEvents(start, end);
     };
+
+    // 초기 데이터 가져오기
+    useEffect(() => {
+        const { start, end } = getMonthRange(new Date());
+        fetchEvents(start, end);
+        return () => {
+            if (cancelTokenSource.current) {
+                cancelTokenSource.current.cancel();
+            }
+        };
+    }, [fetchEvents]);
 
     // 팝업 열기
     const handleEventClick = (clickInfo) => {
@@ -65,15 +86,15 @@ export default function MainCalendar(props) {
             start: clickInfo.event.startStr,
             end: clickInfo.event.endStr,
             description: clickInfo.event.extendedProps.description || "",
-            upload: clickInfo.event.extendedProps.upload || null, // upload 정보 추가
+            upload: clickInfo.event.extendedProps.upload || null,
         });
-        setIsPopupOpen(true); // 팝업 열기
+        setIsPopupOpen(true);
     };
 
     // 팝업 닫기
     const handleClosePopup = () => {
-        setIsPopupOpen(false); // 팝업 닫기
-        setSelectedEvent(null); // 선택된 일정 초기화
+        setIsPopupOpen(false);
+        setSelectedEvent(null);
     };
 
     // 일정 삭제
@@ -87,8 +108,9 @@ export default function MainCalendar(props) {
                     }
                 );
                 if (response.data) {
-                    fetchEvents(new Date()); // 삭제 후 이벤트 새로고침
-                    handleClosePopup(); // 팝업 닫기
+                    const { start, end } = getMonthRange(new Date());
+                    fetchEvents(start, end);
+                    handleClosePopup();
                 }
             } catch (err) {
                 console.error("Failed to delete event:", err);
@@ -109,7 +131,7 @@ export default function MainCalendar(props) {
                 events={events}
                 selectable={true}
                 editable={true}
-                eventClick={handleEventClick} // 이벤트 클릭 시 팝업 실행
+                eventClick={handleEventClick}
                 datesSet={handleDatesSet}
                 eventContent={(eventInfo) => (
                     <div>
@@ -119,7 +141,6 @@ export default function MainCalendar(props) {
                 )}
             />
 
-            {/* 팝업창 */}
             {isPopupOpen && selectedEvent && (
                 <div className="popup">
                     <div className="popup-content">
@@ -139,14 +160,14 @@ export default function MainCalendar(props) {
                                 selectedEvent.upload.endsWith(".png") ||
                                 selectedEvent.upload.endsWith(".jpeg") ? (
                                     <img
-                                        src={"https://heimsunback-production.up.railway.app"+selectedEvent.upload}
+                                        src={"https://heimsunback-production.up.railway.app" + selectedEvent.upload}
                                         alt="Event Upload"
                                         style={{ maxWidth: "100%", maxHeight: "300px" }}
                                     />
                                 ) : selectedEvent.upload.endsWith(".mp4") ||
                                   selectedEvent.upload.endsWith(".avi") ? (
                                     <video
-                                        src={"https://heimsunback-production.up.railway.app"+selectedEvent.upload}
+                                        src={"https://heimsunback-production.up.railway.app" + selectedEvent.upload}
                                         controls
                                         style={{ maxWidth: "100%", maxHeight: "300px" }}
                                     />
