@@ -20,7 +20,7 @@ export default function MainCalendar(props) {
 
     // 서버에서 이벤트 가져오기
     const fetchEvents = async (date) => {
-        const { start, end } = getMonthRange(date);
+        const { start } = getMonthRange(date);
         try {
             const formattedStart = formatDate(new Date(start));
             const response = await axios.post(
@@ -49,6 +49,7 @@ export default function MainCalendar(props) {
         return { start, end };
     };
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         fetchEvents(new Date());
     }, []);
