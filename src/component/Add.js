@@ -96,8 +96,9 @@ export default function Add(props){
                 const file = event.target.uploadFile.files[0];
 
                 // 사용자 ID (외부 변수 참조)
-                const user_id = window.user_id || 'default_user'; // 예: 외부에서 제공됨
+                const user_id = props.user_id;
 
+                // 모든 필드 유효성 검사
                 if (!title || !description || !start || !end || !file) {
                     alert('모든 필드를 입력해주세요.');
                     return;
@@ -106,22 +107,26 @@ export default function Add(props){
                 // FormData 생성
                 const formData = new FormData();
                 formData.append('user_id', user_id);
+                formData.append('title', title); // 서버가 title을 요구한다면 추가
                 formData.append('description', description);
                 formData.append('start', start);
                 formData.append('end', end);
-                formData.append('upload', file);
+                formData.append('upload', file); // 파일 첨부
 
                 try {
                     // 서버에 데이터 전송
-                    const response = await fetch('http://localhost:5000/farm/add', {
+                    const response = await fetch('https://heimsunback-production.up.railway.app/farm/add', {
                         method: 'POST',
-                        body: formData
+                        body: formData, // FormData 전송
+                        mode : 'cors'
                     });
 
                     if (response.ok) {
                         alert('일정이 성공적으로 추가되었습니다.');
                         event.target.reset(); // 폼 리셋
                     } else {
+                        const errorData = await response.json();
+                        console.error('서버 응답 오류:', errorData);
                         alert('일정 추가 중 문제가 발생했습니다.');
                     }
                 } catch (error) {

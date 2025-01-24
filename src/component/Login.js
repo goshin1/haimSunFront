@@ -26,21 +26,83 @@ export default function Login(){
         setPassword(event.target.value);
     };
 
-    const handleSubmit = (event) => {
+    const handleSubmit = async (event) => {
         event.preventDefault();
-        if(sign){
-            // 회원가입
-        }else{
-            // 로그인
-            
-            navigate('/main', {
-                state : {
-                    id : 'id'
+    
+        // Form data
+        const id = event.target.id.value;
+        const password = event.target.password.value;
+        const email = event.target.email ? event.target.email.value : null;
+        const name = event.target.name ? event.target.name.value : null;
+    
+        try {
+            if (sign) {
+                // 중복 체크
+                const duplicateResponse = await fetch('https://heimsunback-production.up.railway.app/duplicate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ user_id: id })
+                });
+    
+                const isDuplicate = await duplicateResponse.json();
+                if (!duplicateResponse.ok || !isDuplicate) {
+                    alert('아이디가 중복되었습니다. 다른 아이디를 사용해주세요.');
+                    return;
                 }
-            })
+    
+                // 회원가입 요청
+                const signResponse = await fetch('https://heimsunback-production.up.railway.app/sign', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        user_id: id,
+                        password,
+                        name,
+                        email
+                    })
+                });
+    
+                if (signResponse.ok) {
+                    alert('회원가입이 완료되었습니다! 로그인 해주세요.');
+                } else {
+                    alert('회원가입에 실패했습니다. 다시 시도해주세요.');
+                }
+            } else {
+                // 로그인 요청
+                const loginResponse = await fetch('https://heimsunback-production.up.railway.app/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        user_id: id,
+                        password
+                    })
+                });
+    
+                const isSuccess = await loginResponse.json();
+                if (loginResponse.ok && isSuccess) {
+                    alert('로그인 성공!');
+                    navigate('/main', {
+                        state: {
+                            id
+                        }
+                    });
+                } else {
+                    alert('로그인에 실패했습니다. 아이디와 비밀번호를 확인해주세요.');
+                }
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('서버와의 통신 중 오류가 발생했습니다. 다시 시도해주세요.');
         }
-        console.log('아이디:', id, '비밀번호:', password);
+    
     };
+    
 
     return <div className="login-form">
         <div className="logo">

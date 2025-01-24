@@ -9,6 +9,7 @@
     "@fullcalendar/react": "^6.1.15",
     "@fullcalendar/timegrid": "^6.1.15",
     "@reduxjs/toolkit": "^2.5.0",
+    "axios": "^1.7.9",
     "cra-template": "1.2.0",
     "http-proxy-middleware": "^3.0.3",
     "react": "^19.0.0",
@@ -44,5 +45,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11"
   }
 }

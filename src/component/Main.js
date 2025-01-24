@@ -1,10 +1,12 @@
 import './main.css'
 import { useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import Add from './Add'
 import MainCalendar from './MainCalender'
 
 export default function Main(){
     const [select, setSelect] = useState('calender')
+    const { state } = useLocation();
 
     return <div className='main'>
         <div className='sideBar'>
@@ -21,7 +23,7 @@ export default function Main(){
             </div>
         </div>
         <div className='mainContent'>
-            {select === 'calender' ? <MainCalendar></MainCalendar> : <Add select={select}></Add>}
+            {select === 'calender' ? <MainCalendar user_id={state.id}></MainCalendar> : <Add select={select} user_id={state.id}></Add>}
 
         </div>
     </div>
