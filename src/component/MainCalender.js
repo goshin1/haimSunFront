@@ -23,7 +23,6 @@ export default function MainCalendar(props) {
         const { start, end } = getMonthRange(date);
         try {
             const formattedStart = formatDate(new Date(start));
-            const formattedEnd = formatDate(new Date(end));
             const response = await axios.post(
                 "https://heimsunback-production.up.railway.app/farm/month",
                 { user_id, month: formattedStart }
