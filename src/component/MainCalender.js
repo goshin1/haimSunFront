@@ -1,5 +1,5 @@
 import './mainCalender.css'
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
@@ -19,10 +19,11 @@ export default function MainCalendar(props) {
     };
 
     // 서버에서 이벤트 가져오기
-    const fetchEvents = async (date) => {
-        const { start } = getMonthRange(date);
+    const fetchEvents = useCallback(async (date) => {
+        const { start, end } = getMonthRange(date); // `end`를 여기에 활용 가능
         try {
             const formattedStart = formatDate(new Date(start));
+            const formattedEnd = formatDate(new Date(end));
             const response = await axios.post(
                 "https://heimsunback-production.up.railway.app/farm/month",
                 { user_id, month: formattedStart }
@@ -33,7 +34,7 @@ export default function MainCalendar(props) {
                     title: event.title,
                     start: event.start,
                     end: event.end,
-                    description: event.description || "", // 추가적인 설명 필드
+                    description: event.description || "",
                     upload: event.upload
                 }));
                 setEvents(fetchedEvents);
@@ -41,7 +42,7 @@ export default function MainCalendar(props) {
         } catch (err) {
             console.error("Failed to fetch events:", err);
         }
-    };
+    }, [user_id]);
 
     const getMonthRange = (date) => {
         const start = new Date(date.getFullYear(), date.getMonth(), 1);
@@ -49,7 +50,6 @@ export default function MainCalendar(props) {
         return { start, end };
     };
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         fetchEvents(new Date());
     }, []);
