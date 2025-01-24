@@ -143,7 +143,7 @@ export default function Login(){
             <button type="submit">{sign ? 'Sign' : 'Login'}</button>
             <button type="button" onClick={() => {
                 setSign(!sign)
-            }}>{sign ? 'Cancle' : 'Now Sign'}</button>
+            }}>{sign ? 'Cancel' : 'Now Sign'}</button>
         </form>
     </div>
 }
