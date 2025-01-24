@@ -20,7 +20,7 @@ export default function MainCalendar(props) {
 
     // 서버에서 이벤트 가져오기
     const fetchEvents = useCallback(async (date) => {
-        const { start, end } = getMonthRange(date); // `end`를 여기에 활용 가능
+        const { start } = getMonthRange(date); // `end`를 여기에 활용 가능
         try {
             const formattedStart = formatDate(new Date(start));
             const response = await axios.post(
