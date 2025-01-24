@@ -23,7 +23,6 @@ export default function MainCalendar(props) {
         const { start, end } = getMonthRange(date); // `end`를 여기에 활용 가능
         try {
             const formattedStart = formatDate(new Date(start));
-            const formattedEnd = formatDate(new Date(end));
             const response = await axios.post(
                 "https://heimsunback-production.up.railway.app/farm/month",
                 { user_id, month: formattedStart }
@@ -52,7 +51,7 @@ export default function MainCalendar(props) {
 
     useEffect(() => {
         fetchEvents(new Date());
-    }, []);
+    }, [fetchEvents]);
 
     const handleDatesSet = (dateInfo) => {
         fetchEvents(dateInfo.start);
